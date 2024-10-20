@@ -1,6 +1,7 @@
 export interface User {
   id: string;
   type?: "user" | "group";
+  name?: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -17,6 +18,7 @@ export interface User {
   lastActive: Date;
   timestamp: Date;
   roomId?: string;
+  lastMessage?: string;
 }
 
 export interface Attachment {
@@ -38,11 +40,14 @@ export interface ChatMessage {
 
 export interface Room {
   id: string;
-  name?: string;
+  name: string;
   isGroup: boolean;
   memberCount: number;
   members: User[];
   timestamp: Date;
   admins: User[];
   adminCount: number;
+  avatar?: {
+    url?: string;
+  };
 }

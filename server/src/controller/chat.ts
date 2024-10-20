@@ -1,6 +1,8 @@
 import type { NextFunction, Request, Response } from "express";
 import Room from "../schemas/room";
 import Chat from "../schemas/chat";
+import { Types } from "mongoose";
+import user from "../schemas/user";
 
 const GlobalTryCatch = (fn: Function) => {
   return (req: Request, res: Response, next: NextFunction) => {
@@ -24,6 +26,22 @@ export const sendMessage = GlobalTryCatch(
       ],
     } = req.body;
 
+    const group = await Room.findById(room);
+
+    if (!group) {
+      return res.status(404).json({
+        success: false,
+        message: "Room not found.",
+      });
+    }
+
+    group?.members?.forEach(async (member) => {
+      await user.findByIdAndUpdate(member, {
+        timestamp: new Date(),
+        lastActive: new Date(),
+      });
+    });
+
     const newMessage = await Chat.create({
       message,
       sender: req.user?._id,
@@ -44,35 +62,36 @@ export const sendMessage = GlobalTryCatch(
   }
 );
 
-// @desc Get chat history with a user
-// @route GET /history/:otherUserId
+// @desc Get chat history with a room
+// @route GET /history/:roomId
 export const getChatHistory = GlobalTryCatch(
   async (req: Request, res: Response) => {
-    const { otherUserId } = req.params;
+    const { roomId } = req.params;
     const userId = req.user?._id;
 
-    const rooms = await Room.find({
-      $or: [
-        {
-          members: {
-            $all: [userId, otherUserId],
-          },
-        },
-        {
-          members: {
-            $all: [otherUserId, userId],
-          },
-        },
-      ],
-    }).populate("lastMessage");
+    const room = await Room.findById(roomId);
+
+    if (!room) {
+      return res.status(404).json({
+        success: false,
+        message: "Room not found.",
+      });
+    }
+
+    console.log(room.members);
+
+    if (room.members && !room.members.includes(userId as Types.ObjectId)) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not a member of this room.",
+      });
+    }
 
     const chatHistory = await Chat.find({
-      room: {
-        $in: rooms.map((room) => room._id),
-      },
+      room: roomId,
     })
-      .sort({ timestamp: 1 })
-      .populate("sender");
+      .populate("sender")
+      .sort({ timestamp: -1 });
 
     return res.status(200).json({
       success: true,
@@ -85,7 +104,7 @@ export const getChatHistory = GlobalTryCatch(
 // @route POST /room
 export const createRoom = GlobalTryCatch(
   async (req: Request, res: Response) => {
-    const { name, description, isGroup, members } = req.body;
+    const { name, description, isGroup, members, avatar } = req.body;
 
     const existingRoom = await Room.findOne({
       name,
@@ -109,17 +128,18 @@ export const createRoom = GlobalTryCatch(
       members.push(req.user?._id);
     }
 
-    const newRoom = await Room.create({
+    await Room.create({
       name,
       description,
       isGroup,
       members,
       admins: isGroup ? [req.user?._id] : [],
+      avatar,
     });
 
     return res.status(201).json({
       success: true,
-      data: newRoom,
+      message: "Room created.",
     });
   }
 );
@@ -184,6 +204,26 @@ export const removeUserFromRoom = GlobalTryCatch(
     return res.status(200).json({
       success: true,
       message: "User removed from room.",
+    });
+  }
+);
+
+export const getRoomById = GlobalTryCatch(
+  async (req: Request, res: Response) => {
+    const { roomId } = req.params;
+
+    const room = await Room.findById(roomId);
+
+    if (!room) {
+      return res.status(404).json({
+        success: false,
+        message: "Room not found.",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: room,
     });
   }
 );

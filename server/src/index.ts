@@ -28,7 +28,7 @@ console.log(process.env.PORT);
 // Rate limiter
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 250,
   keyGenerator(request: Request, _response: Response): string {
     if (!request.ip) {
       console.warn("Rate limiter: Request IP not found in the request object");

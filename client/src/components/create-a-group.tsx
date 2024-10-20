@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -15,6 +15,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import UploadWidget from "@/components/upload-widget";
 import GroupMembersSelector from "./group-member-selector";
+import { useCreateGroupMutation } from "@/store/api/chat/chat";
+import { toast } from "sonner";
+import { useGetAllUsersQuery } from "@/store/api/users/user";
+import { useDispatch } from "react-redux";
+import { closeModal } from "@/store/slices/add-group-modal";
 
 const formSchema = z.object({
   name: z.string().min(1, "Group name is required"),
@@ -98,6 +103,10 @@ const GroupMembersStep = ({ form }: StepProps) => (
 
 export default function CreateAGroup() {
   const [step, setStep] = useState(0);
+  const dispatch = useDispatch();
+  const [createGroup] = useCreateGroupMutation();
+  const { refetch } = useGetAllUsersQuery();
+  const [isPending, startTransition] = useTransition();
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -133,7 +142,25 @@ export default function CreateAGroup() {
   ];
 
   async function onSubmit(values: FormValues) {
-    console.log(values);
+    startTransition(() => {
+      createGroup(values)
+        .then(({ data, error }) => {
+          if (data) {
+            if (data.success) {
+              toast.success(data.message);
+              refetch();
+              dispatch(closeModal());
+            } else {
+              toast.error(data.message);
+            }
+          } else if (error) {
+            toast.error("An error occurred while creating the group");
+          }
+        })
+        .catch(() => {
+          toast.error("An error occurred while creating the group");
+        });
+    });
   }
 
   return (
@@ -156,7 +183,7 @@ export default function CreateAGroup() {
               e.preventDefault();
               setStep((prev) => Math.max(0, prev - 1));
             }}
-            disabled={step === 0}
+            disabled={step === 0 || isPending}
           >
             Previous
           </Button>
@@ -164,14 +191,13 @@ export default function CreateAGroup() {
           {step < steps.length - 1 ? (
             <Button
               type="button"
+              disabled={isPending}
               onClick={async (e) => {
                 e.preventDefault();
                 const currentField = steps[step].name;
                 const isValid = await form.trigger(
                   currentField as keyof FormValues
                 );
-
-                console.log(currentField, isValid);
 
                 if (isValid) {
                   setStep((prev) => Math.min(steps.length - 1, prev + 1));
@@ -181,7 +207,9 @@ export default function CreateAGroup() {
               Next
             </Button>
           ) : (
-            <Button type="submit">Create Group</Button>
+            <Button type="submit" disabled={isPending}>
+              Create Group
+            </Button>
           )}
         </div>
       </form>

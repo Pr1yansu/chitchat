@@ -15,7 +15,7 @@ interface UsersResponse {
   users: User[];
 }
 
-interface UserContactedUserResponse {
+export interface UserContactedUserResponse {
   sender: User;
   receiver: User;
   message: string;
@@ -98,6 +98,13 @@ export const userApi = createApi({
         url: `/contact/${userId}`,
       }),
     }),
+    getUserByIds: builder.mutation<UsersResponse, { userIds: string[] }>({
+      query: ({ userIds }) => ({
+        url: "/users",
+        method: "POST",
+        body: { userIds },
+      }),
+    }),
   }),
 });
 
@@ -109,4 +116,5 @@ export const {
   useGetAllUsersQuery,
   useAddContactMutation,
   useGetUserContactedUserByIdQuery,
+  useGetUserByIdsMutation,
 } = userApi;

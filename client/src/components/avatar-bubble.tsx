@@ -1,13 +1,16 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { RootState } from "@/store/store";
 import { cva } from "class-variance-authority";
 import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 
 type AvatarBubbleProps = {
-  status?: "online" | "offline" | "away";
   size?: "default" | "sm" | "lg" | "xs" | "xl";
   image?: string;
   name: string;
+  id: string;
+  type: "user" | "group";
 };
 
 const GOLDEN_RATIO_CONJUGATE = 0.6180339887;
@@ -72,7 +75,11 @@ function generateGoldenRatioColor() {
   };
 }
 
-const AvatarBubble = ({ status, size, name, image }: AvatarBubbleProps) => {
+const AvatarBubble = ({ size, name, image, id, type }: AvatarBubbleProps) => {
+  const status = useSelector(
+    (state: RootState) => state.onlineStatus.onlineStatus
+  );
+  const currentStatus = status.find((status) => status.userId === id);
   const [backgroundColor, setBackgroundColor] = useState<string>("");
   const [textColor, setTextColor] = useState<string>("");
 
@@ -99,14 +106,14 @@ const AvatarBubble = ({ status, size, name, image }: AvatarBubbleProps) => {
               .join("")}
           </AvatarFallback>
         </Avatar>
-        {status && (
+        {type === "user" && (
           <div
             className={cn(
-              "absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white",
+              "absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white bg-red-500",
               {
-                "bg-emerald-500": status === "online",
-                "bg-red-500": status === "offline",
-                "bg-yellow-500": status === "away",
+                "bg-emerald-500": currentStatus?.status === "online",
+
+                "bg-yellow-500": currentStatus?.status === "idle",
               }
             )}
           />

@@ -4,6 +4,7 @@ import { userApi } from "./api/users/user";
 import contactModalReducer from "./slices/add-contact-modal";
 import groupModalReducer from "./slices/add-group-modal";
 import chatReducer from "./slices/chat";
+import onlineStatusReducer from "./slices/status";
 import {
   persistStore,
   persistReducer,
@@ -22,6 +23,7 @@ const rootReducer = combineReducers({
   [chatApi.reducerPath]: chatApi.reducer,
   contactModal: contactModalReducer,
   groupModal: groupModalReducer,
+  onlineStatus: onlineStatusReducer,
   chat: chatReducer,
 });
 

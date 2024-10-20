@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import Avatar from "@/components/avatar";
 import AvatarBubble from "@/components/avatar-bubble";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import ContactList from "@/components/contact-list";
 import {
   useGetAllUsersQuery,
   useGetProfileQuery,
+  useGetUserByIdsMutation,
 } from "@/store/api/users/user";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDispatch } from "react-redux";
@@ -16,26 +17,55 @@ import { openModal } from "@/store/slices/add-contact-modal";
 import AddContact from "@/components/add-contact";
 import MessagingArea from "@/components/messaging-area";
 import AddContactModal from "@/components/modal/add-contact-modal";
+import { socket } from "@/services/socket";
+import { User } from "@/types";
+import { toast } from "sonner";
 
 const Chat = () => {
   const dispatch = useDispatch();
+  const [getUserByIds] = useGetUserByIdsMutation();
+  const [onlineUserIds, setOnlineUserIds] = React.useState([]);
+  const [onlineUsers, setOnlineUsers] = React.useState<User[] | []>([]);
   const { data, isLoading, isFetching } = useGetProfileQuery();
   const [showSearch, setShowSearch] = React.useState(false);
-
-  const firstFiveUsers = useMemo(
-    () => data?.user?.contacts?.slice(0, 5),
-    [data?.user?.contacts]
-  );
-  const moreContactCount = useMemo(
-    () => (data?.user?.contacts?.length ? data?.user?.contacts?.length - 5 : 0),
-    [data?.user?.contacts]
-  );
 
   const {
     data: allUsersData,
     isLoading: allUsersIsLoading,
     isFetching: allUsersIsFetching,
   } = useGetAllUsersQuery();
+
+  useEffect(() => {
+    socket.on("online-users", (users) => {
+      setOnlineUserIds(users);
+    });
+
+    if (onlineUserIds.length > 0) {
+      getUserByIds({ userIds: onlineUserIds })
+        .then(({ data }) => {
+          if (data) {
+            setOnlineUsers(data.users);
+          } else {
+            toast.error("Failed to fetch online users");
+          }
+        })
+        .catch(() => {
+          toast.error("Failed to fetch online users");
+        });
+    }
+
+    return () => {
+      socket.off("onlineUsers");
+    };
+  }, [setOnlineUserIds, onlineUserIds, getUserByIds]);
+
+  const firstFiveUsers = useMemo(() => {
+    return onlineUsers.slice(0, 5);
+  }, [onlineUsers]);
+
+  const moreContactCount = useMemo(() => {
+    return onlineUsers.length - 5;
+  }, [onlineUsers]);
 
   return (
     <>
@@ -64,7 +94,7 @@ const Chat = () => {
           </div>
         </div>
         <Separator />
-        {data?.user?.contacts && data?.user?.contacts.length > 0 && (
+        {onlineUsers.length > 0 && (
           <div className="px-6 py-4 space-y-2">
             <h4 className="text-xl text-primary flex items-center gap-1 line-clamp-1 font-bold capitalize">
               Online now
@@ -81,8 +111,9 @@ const Chat = () => {
                 <>
                   {firstFiveUsers?.map((user) => (
                     <AvatarBubble
+                      type="user"
                       key={user.id}
-                      status="online"
+                      id={user.id}
                       name={`${user.firstName || "Unknown"} ${
                         user.lastName || "User"
                       }`}

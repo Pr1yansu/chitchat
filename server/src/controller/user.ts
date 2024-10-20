@@ -4,6 +4,7 @@ import { Types } from "mongoose";
 import User from "../schemas/user";
 import Room from "../schemas/room";
 import { generateMapFromREQ, invalidFieldHandler } from "../lib/error-handlers";
+import Chat from "../schemas/chat";
 
 // Utility function to validate ObjectId
 const isValidObjectId = (id: string) => Types.ObjectId.isValid(id);
@@ -77,7 +78,9 @@ export const getProfile = GlobalTryCatch(
 // Get All Users Controller
 export const getAllUsers = GlobalTryCatch(
   async (req: Request, res: Response) => {
-    const users = await User.find({ _id: { $ne: req.user?._id } });
+    const users = await User.find({ _id: { $ne: req.user?._id } }).populate(
+      "rooms"
+    );
 
     const groups = await Room.find({
       members: req.user?._id,
@@ -86,27 +89,44 @@ export const getAllUsers = GlobalTryCatch(
       .populate("members")
       .populate("admins");
 
-    const combined = [
-      ...users.map((user) => ({
-        type: "user",
-        id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        avatar: user.avatar || null,
-        lastActive: user.lastActive,
-        timestamp: user.timestamp,
-      })),
-      ...groups.map((group) => ({
-        type: "group",
-        id: group._id,
-        name: group.name,
-        description: group.description,
-        avatar: group.avatar || null,
-        members: group.members,
-        admins: group.admins,
-        timestamp: group.timestamp,
-      })),
-    ];
+    const combined = await Promise.all([
+      ...users.map(async (user) => {
+        const lastMessage = await Chat.findOne({
+          room: { $in: user.rooms },
+        }).sort({ timestamp: -1 });
+
+        return {
+          type: "user",
+          id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          avatar: user.avatar || null,
+          lastActive: user.lastActive,
+          timestamp: user.timestamp,
+          lastMessage: lastMessage?.message || null,
+        };
+      }),
+      ...groups.map(async (group) => {
+        const lastMessage = await Chat.findOne({
+          room: group._id,
+        }).sort({ timestamp: -1 });
+        return {
+          type: "group",
+          id: group._id,
+          name: group.name,
+          description: group.description,
+          avatar: group.avatar || null,
+          members: group.members,
+          admins: group.admins,
+          timestamp: group.timestamp,
+          lastMessage: lastMessage?.message || null,
+        };
+      }),
+    ]);
+
+    combined.sort((a, b) => {
+      return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+    });
 
     return res.json({ message: "All users.", users: combined });
   }
@@ -177,5 +197,21 @@ export const getContact = GlobalTryCatch(
       receiver: contact,
       room,
     });
+  }
+);
+
+// Get Users by ids Controller
+export const getUsersByIds = GlobalTryCatch(
+  async (req: Request, res: Response) => {
+    const { userIds } = req.body;
+    const userId = req.user?._id;
+
+    if (!userIds.length) {
+      return res.status(400).json({ message: "No user IDs provided." });
+    }
+
+    const users = await User.find({ _id: { $in: userIds } });
+
+    return res.json({ message: "Users found.", users });
   }
 );

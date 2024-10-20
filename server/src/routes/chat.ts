@@ -3,6 +3,7 @@ import {
   addUserToRoom,
   createRoom,
   getChatHistory,
+  getRoomById,
   removeUserFromRoom,
   sendMessage,
 } from "../controller/chat";
@@ -13,8 +14,11 @@ const router = express.Router();
 // @Route POST /send
 router.post("/send", ensureAuthenticated, sendMessage);
 
+// @Route GET /room/:roomId
+router.get("/room/:roomId", ensureAuthenticated, getRoomById);
+
 // @Route GET /history/:otherUserId
-router.get("/history/:otherUserId", ensureAuthenticated, getChatHistory);
+router.get("/history/:roomId", ensureAuthenticated, getChatHistory);
 
 // @Route POST /room
 router.post("/room", ensureAuthenticated, createRoom);

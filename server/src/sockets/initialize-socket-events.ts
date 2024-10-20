@@ -9,6 +9,10 @@ export const initializeSocketEvents = (io: Server) => {
       io.onlineUsers.set(userId, socket.id);
     }
 
+    const onlineUsers = Array.from(io.onlineUsers.keys());
+
+    socket.emit("online-users", onlineUsers);
+
     socket.on("join-room", (roomId) => {
       socket.join(roomId);
 
@@ -31,10 +35,33 @@ export const initializeSocketEvents = (io: Server) => {
       });
     });
 
+    io.emit("user_connected", {
+      userId,
+      status: "online",
+    });
+
+    socket.on("user_idle", () => {
+      io.emit("user_idle", {
+        userId,
+        status: "idle",
+      });
+    });
+
+    socket.on("user_active", () => {
+      io.emit("user_connected", {
+        userId,
+        status: "online",
+      });
+    });
+
     socket.on("disconnect", () => {
       if (userId) {
         io.onlineUsers.delete(userId);
       }
+      io.emit("user_disconnected", {
+        userId,
+        status: "offline",
+      });
     });
   });
 };

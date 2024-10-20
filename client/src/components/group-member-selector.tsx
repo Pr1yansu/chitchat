@@ -69,18 +69,23 @@ const GroupMembersSelector = ({ onChange }: GroupMembersSelectorProps) => {
                   variant={"ghost"}
                   type="button"
                   onClick={() => {
+                    const updatedUserIds = userIds.includes(user.id)
+                      ? userIds.filter((id) => id !== user.id)
+                      : [...userIds, user.id];
+
+                    setUserIds(updatedUserIds);
+
                     if (userIds.includes(user.id)) {
-                      setUserIds((prev) => prev.filter((id) => id !== user.id));
                       toast.error(
-                        `${user.firstName} will not be added from the group`
+                        `${user.firstName} will not be added to the group`
                       );
                     } else {
-                      setUserIds((prev) => [...prev, user.id]);
                       toast.success(
                         `${user.firstName} will be added to the group`
                       );
                     }
-                    onChange(userIds);
+
+                    onChange(updatedUserIds);
                   }}
                 >
                   {userIds.includes(user.id) ? (

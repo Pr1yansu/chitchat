@@ -10,6 +10,7 @@ import {
   getAllUsers,
   getContact,
   getProfile,
+  getUsersByIds,
   register,
 } from "../controller/user";
 import { ensureAuthenticated } from "../middleware/auth";
@@ -104,5 +105,8 @@ router.put("/add/contact/:contactId", ensureAuthenticated, addContact);
 
 // @route GET /auth/contact/:userId
 router.get("/contact/:contactId", ensureAuthenticated, getContact);
+
+// @route GET /auth/users
+router.post("/users", ensureAuthenticated, getUsersByIds);
 
 export default router;

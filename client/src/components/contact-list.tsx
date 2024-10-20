@@ -12,16 +12,21 @@ const ContactList = ({ contacts }: ContactListProps) => {
 
   return (
     <div
-      className="bg-slate-50/50 px-3 overflow-y-scroll flex-1  pb-4"
+      className="bg-slate-50/30 px-3 overflow-y-scroll flex-1  pb-4"
       id="contact-list"
     >
       {contacts.map((contact) => (
         <Contact
           key={contact.id}
           id={contact.id}
-          name={`${contact.firstName} ${contact.lastName}`}
+          name={
+            contact.type === "group"
+              ? contact.name || "Unknown Group"
+              : `${contact.firstName} ${contact.lastName}`
+          }
           image={contact.avatar?.url}
           type={contact.type || "user"}
+          sentShortMsg={contact.lastMessage}
         />
       ))}
     </div>
