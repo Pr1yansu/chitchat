@@ -50,29 +50,14 @@ const chatSlice = createSlice({
     setMessages: (state, action: PayloadAction<ChatMessage[]>) => {
       state.messages = action.payload;
     },
-    setTypingUser: (state, action: PayloadAction<string>) => {
-      if (!state.typingUsers.includes(action.payload)) {
-        state.typingUsers.push(action.payload);
-      }
-    },
-    removeTypingUser: (state, action: PayloadAction<string>) => {
-      state.typingUsers = state.typingUsers.filter(
-        (id) => id !== action.payload
-      );
-    },
+
     clearMessages: () => {
       return initialState;
     },
   },
 });
 
-export const {
-  addMessage,
-  updateMessageStatus,
-  setTypingUser,
-  removeTypingUser,
-  clearMessages,
-  setMessages,
-} = chatSlice.actions;
+export const { addMessage, updateMessageStatus, clearMessages, setMessages } =
+  chatSlice.actions;
 
 export default chatSlice.reducer;

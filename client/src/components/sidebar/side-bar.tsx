@@ -16,7 +16,7 @@ import {
   Settings,
   CircleArrowOutUpRight,
 } from "lucide-react";
-import { useLogoutMutation } from "@/store/api/users/user";
+import { useGetProfileQuery, useLogoutMutation } from "@/store/api/users/user";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
@@ -24,7 +24,7 @@ const routes = [
   {
     label: "Dashboard",
     icon: LucideLayoutDashboard,
-    href: "/",
+    href: "/dashboard",
   },
   {
     label: "Chat",
@@ -45,6 +45,7 @@ const routes = [
 
 const SideBar = () => {
   const { pathname } = useLocation();
+  const { data, isLoading: isProfileLoading } = useGetProfileQuery();
   const navigate = useNavigate();
   const [logout, { isLoading: isLoggingOut, error: logoutError }] =
     useLogoutMutation();
@@ -54,6 +55,12 @@ const SideBar = () => {
       toast.error("Failed to logout");
     }
   }, [logoutError]);
+
+  if (isProfileLoading) return null;
+
+  if (data?.user && data?.user?.role !== "admin") {
+    routes.shift();
+  }
 
   if (includedRoutes.includes(pathname))
     return (

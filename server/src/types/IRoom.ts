@@ -12,4 +12,6 @@ export interface IRoom extends mongoose.Document {
   admins?: mongoose.Types.ObjectId[];
   timestamp: Date;
   isGroup: boolean;
+  owner?: mongoose.Types.ObjectId;
+  createdAt: Date;
 }

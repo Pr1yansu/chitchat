@@ -41,6 +41,13 @@ const roomSchema = new mongoose.Schema<IRoom>({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Chat",
   },
+  owner: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: function () {
+      return this.isGroup;
+    },
+  },
   admins: [
     {
       type: mongoose.Schema.Types.ObjectId,
@@ -57,6 +64,10 @@ const roomSchema = new mongoose.Schema<IRoom>({
   isGroup: {
     type: Boolean,
     default: false,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
   },
 });
 

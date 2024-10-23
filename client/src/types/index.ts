@@ -19,6 +19,8 @@ export interface User {
   timestamp: Date;
   roomId?: string;
   lastMessage?: string;
+  role?: "user" | "admin";
+  isBanned?: boolean;
 }
 
 export interface Attachment {
@@ -50,4 +52,10 @@ export interface Room {
   avatar?: {
     url?: string;
   };
+  owner: User;
+}
+
+export interface DashboardUsers {
+  day: string;
+  count: number;
 }

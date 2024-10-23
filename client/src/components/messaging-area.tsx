@@ -19,6 +19,7 @@ import {
 import { addMessage, clearMessages } from "@/store/slices/chat";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import MessagingHeader from "@/components/messaging-header";
+import { startTyping, stopTyping } from "@/store/slices/typing";
 
 export default function MessagingArea() {
   const [searchParams] = useSearchParams();
@@ -66,11 +67,41 @@ export default function MessagingArea() {
     socket.on("receive-message", (data) => {
       dispatch(addMessage(data));
     });
+    socket.on("user_typing", ({ roomId, userId, username }) => {
+      dispatch(
+        startTyping({
+          roomId,
+          userId,
+          username,
+        })
+      );
+
+      setTimeout(() => {
+        dispatch(
+          stopTyping({
+            roomId,
+            userId,
+            username,
+          })
+        );
+      }, 3000);
+    });
+    socket.on("user_stop_typing", ({ roomId, userId, username }) => {
+      dispatch(
+        stopTyping({
+          roomId,
+          userId,
+          username,
+        })
+      );
+    });
 
     return () => {
       socket.disconnect();
       socket.off("join-room");
       socket.off("receive-message");
+      socket.off("user_typing");
+      socket.off("user_stop_typing");
       dispatch(clearMessages());
     };
   }, [data, dispatch]);
@@ -264,8 +295,20 @@ export default function MessagingArea() {
                 });
               });
             }}
-            onTyping={() => {}}
-            onStopTyping={() => {}}
+            onTyping={() => {
+              socket.emit("typing", {
+                roomId: data?.room.id,
+                userId: user?.user?.id,
+                username: `${user?.user?.firstName} ${user?.user?.lastName}`,
+              });
+            }}
+            onStopTyping={() => {
+              socket.emit("stop-typing", {
+                roomId: data?.room.id,
+                userId: user?.user?.id,
+                username: `${user?.user?.firstName} ${user?.user?.lastName}`,
+              });
+            }}
             disabled={pending}
           />
         </div>
@@ -392,8 +435,20 @@ export default function MessagingArea() {
                 });
               });
             }}
-            onTyping={() => {}}
-            onStopTyping={() => {}}
+            onTyping={() => {
+              socket.emit("typing", {
+                roomId: groupData?.data.id,
+                userId: user?.user?.id,
+                username: `${user?.user?.firstName} ${user?.user?.lastName}`,
+              });
+            }}
+            onStopTyping={() => {
+              socket.emit("stop-typing", {
+                roomId: groupData?.data.id,
+                userId: user?.user?.id,
+                username: `${user?.user?.firstName} ${user?.user?.lastName}`,
+              });
+            }}
             disabled={pending}
           />
         </div>

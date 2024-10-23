@@ -70,11 +70,24 @@ const userSchema = new mongoose.Schema<IUser>({
       ref: "Room",
     },
   ],
+  role: {
+    type: String,
+    default: "user",
+    enum: ["user", "admin"],
+  },
   lastActive: {
     type: Date,
     default: Date.now,
   },
+  isBanned: {
+    type: Boolean,
+    default: false,
+  },
   timestamp: {
+    type: Date,
+    default: Date.now,
+  },
+  createdAt: {
     type: Date,
     default: Date.now,
   },

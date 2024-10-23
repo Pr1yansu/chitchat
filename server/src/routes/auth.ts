@@ -7,11 +7,14 @@ import {
 } from "express";
 import {
   addContact,
+  banUser,
+  changePassword,
   getAllUsers,
   getContact,
   getProfile,
   getUsersByIds,
   register,
+  updateUser,
 } from "../controller/user";
 import { ensureAuthenticated } from "../middleware/auth";
 
@@ -108,5 +111,14 @@ router.get("/contact/:contactId", ensureAuthenticated, getContact);
 
 // @route GET /auth/users
 router.post("/users", ensureAuthenticated, getUsersByIds);
+
+// @route UPDATE /auth/update
+router.put("/update", ensureAuthenticated, updateUser);
+
+// @route UPDATE /password/change
+router.put("/password/change", ensureAuthenticated, changePassword);
+
+// @route GET /ban/:id
+router.get("/ban/:id", ensureAuthenticated, banUser);
 
 export default router;

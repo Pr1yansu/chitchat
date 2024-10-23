@@ -13,6 +13,7 @@ interface ContactProps {
   image?: string;
   name: string;
   type: "user" | "group";
+  userTypingName?: string;
 }
 
 const Contact = ({
@@ -23,6 +24,7 @@ const Contact = ({
   image,
   name,
   type,
+  userTypingName,
 }: ContactProps) => {
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -76,7 +78,11 @@ const Contact = ({
           {typingStatus ? (
             <p className="text-xs text-primary/60 flex items-center gap-2 line-clamp-1">
               <PencilLine className="size-3" />
-              typing...
+              {type === "group"
+                ? userTypingName && userTypingName?.length > 0
+                  ? `${userTypingName} is typing...`
+                  : "Someone is typing..."
+                : "Typing..."}
             </p>
           ) : (
             <>

@@ -78,9 +78,10 @@ export const getProfile = GlobalTryCatch(
 // Get All Users Controller
 export const getAllUsers = GlobalTryCatch(
   async (req: Request, res: Response) => {
-    const users = await User.find({ _id: { $ne: req.user?._id } }).populate(
-      "rooms"
-    );
+    const users = await User.find({
+      _id: { $ne: req.user?._id },
+      isBanned: false,
+    });
 
     const groups = await Room.find({
       members: req.user?._id,
@@ -100,9 +101,11 @@ export const getAllUsers = GlobalTryCatch(
           id: user._id,
           firstName: user.firstName,
           lastName: user.lastName,
+          email: user.email,
           avatar: user.avatar || null,
           lastActive: user.lastActive,
           timestamp: user.timestamp,
+          rooms: user.rooms,
           lastMessage: lastMessage?.message || null,
         };
       }),
@@ -215,3 +218,77 @@ export const getUsersByIds = GlobalTryCatch(
     return res.json({ message: "Users found.", users });
   }
 );
+
+// Update User by id Controller
+export const updateUser = GlobalTryCatch(
+  async (req: Request, res: Response) => {
+    const { firstName, lastName, email } = req.body;
+    const userId = req.user?._id;
+
+    const user = await User.findById(userId);
+
+    if (!user) return res.status(404).json({ message: "User not found." });
+
+    user.firstName = firstName || user.firstName;
+    user.lastName = lastName || user.lastName;
+    user.email = email || user.email;
+
+    await user.save();
+
+    return res.json({ message: "User updated.", user });
+  }
+);
+
+// Change Password Controller
+export const changePassword = GlobalTryCatch(
+  async (req: Request, res: Response) => {
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+    const userId = req.user?._id;
+
+    const user = await User.findById(userId);
+
+    if (!user) return res.status(404).json({ message: "User not found." });
+
+    if (!user.password) {
+      return res
+        .status(400)
+        .json({ message: "Can't change password of Social Logged in user" });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ message: "Passwords do not match." });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid password." });
+    }
+
+    const salt = await bcrypt.genSalt(parseInt(process.env.BCRYPT_SALT!));
+    const hashedPassword = bcrypt.hashSync(newPassword, salt);
+
+    user.password = hashedPassword;
+
+    await user.save();
+
+    return res.json({ message: "Password updated." });
+  }
+);
+
+export const banUser = GlobalTryCatch(async (req: Request, res: Response) => {
+  const { userId } = req.params;
+
+  if (!isValidObjectId(userId)) {
+    return res.status(400).json({ message: "Invalid user ID." });
+  }
+
+  const user = await User.findById(userId);
+
+  if (!user) return res.status(404).json({ message: "User not found." });
+
+  user.isBanned = true;
+  await user.save();
+
+  return res.json({ message: "User banned.", user });
+});

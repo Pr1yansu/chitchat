@@ -14,6 +14,7 @@ const Settings = lazy(() => import("./pages/settings"));
 const Auth = lazy(() => import("./pages/auth/auth"));
 const PasswordReset = lazy(() => import("./pages/auth/forgot-password"));
 const NotFound = lazy(() => import("./pages/not-found"));
+const Home = lazy(() => import("./pages/home"));
 
 const INACTIVITY_TIMEOUT = 300000;
 
@@ -112,6 +113,8 @@ const App = () => {
 
   const user = data?.user;
 
+  console.log("user", user);
+
   return (
     <BrowserRouter>
       <Suspense fallback={<Loader />}>
@@ -120,7 +123,10 @@ const App = () => {
             {user ? (
               <>
                 <Route path="/auth" element={<Navigate to="/chat" replace />} />
-                <Route path="/" element={<Dashboard />} />
+                <Route path="/" element={<Home />} />
+                {user.role && (
+                  <Route path="/dashboard" element={<Dashboard />} />
+                )}
                 <Route path="/chat" element={<Chat />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/settings" element={<Settings />} />

@@ -5,7 +5,7 @@ dotenv.config({
 });
 
 import { createServer } from "http";
-import { Socket, Server as SocketServer } from "socket.io";
+import { Server as SocketServer } from "socket.io";
 import express, { type Request, type Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -16,14 +16,13 @@ import session from "express-session";
 import passport from "passport";
 import authRoutes from "./routes/auth";
 import chatRoutes from "./routes/chat";
+import dashboardRoutes from "./routes/dashboard";
 import redisClient from "./config/redis-client";
 import { connectDB } from "./config/db";
 import { initializeSocketEvents } from "./sockets/initialize-socket-events";
 
 import "./config/passport";
 import { socketAuthMiddleware } from "./middleware/socket-auth";
-
-console.log(process.env.PORT);
 
 // Rate limiter
 const limiter = rateLimit({
@@ -82,6 +81,7 @@ app.use(passport.session());
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 // Socket.io setup
 const server = createServer(app);

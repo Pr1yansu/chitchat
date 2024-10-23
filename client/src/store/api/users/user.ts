@@ -105,6 +105,53 @@ export const userApi = createApi({
         body: { userIds },
       }),
     }),
+    updateUser: builder.mutation<UserResponse, Partial<User>>({
+      query: (body) => ({
+        url: "/update",
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["User"],
+      transformErrorResponse: (response) => {
+        const error = response.data as ErrorResponse;
+        return error.message;
+      },
+      transformResponse: (response: { message: string; user?: User }) => {
+        return response;
+      },
+    }),
+    changePassword: builder.mutation<
+      UserResponse,
+      { newPassword: string; confirmPassword: string; currentPassword: string }
+    >({
+      query: ({ confirmPassword, newPassword, currentPassword }) => ({
+        url: "/password/change",
+        method: "PUT",
+        body: { confirmPassword, newPassword, currentPassword },
+      }),
+      invalidatesTags: ["User"],
+      transformErrorResponse: (response) => {
+        const error = response.data as ErrorResponse;
+        return error.message;
+      },
+      transformResponse: (response: { message: string; user?: User }) => {
+        return response;
+      },
+    }),
+    banUser: builder.mutation<UserResponse, { id: string }>({
+      query: ({ id }) => ({
+        url: `/ban/${id}`,
+        method: "GET",
+      }),
+      invalidatesTags: ["User"],
+      transformErrorResponse: (response) => {
+        const error = response.data as ErrorResponse;
+        return error.message;
+      },
+      transformResponse: (response: { message: string; user?: User }) => {
+        return response;
+      },
+    }),
   }),
 });
 
@@ -117,4 +164,7 @@ export const {
   useAddContactMutation,
   useGetUserContactedUserByIdQuery,
   useGetUserByIdsMutation,
+  useUpdateUserMutation,
+  useChangePasswordMutation,
+  useBanUserMutation,
 } = userApi;

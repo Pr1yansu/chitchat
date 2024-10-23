@@ -20,6 +20,7 @@ import AddContactModal from "@/components/modal/add-contact-modal";
 import { socket } from "@/services/socket";
 import { User } from "@/types";
 import { toast } from "sonner";
+import FullContactModal from "@/components/modal/full-contact-modal";
 
 const Chat = () => {
   const dispatch = useDispatch();
@@ -183,6 +184,7 @@ const Chat = () => {
         </AddContactModal>
       </div>
       <MessagingArea />
+      <FullContactModal />
     </>
   );
 };

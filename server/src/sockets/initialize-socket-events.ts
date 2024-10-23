@@ -33,6 +33,14 @@ export const initializeSocketEvents = (io: Server) => {
         socket.to(roomId).emit("receive-message", formatMSG);
         socket.emit("receive-message", formatMSG);
       });
+
+      socket.on("typing", ({ roomId, userId, username }) => {
+        io.emit("user_typing", { roomId, userId, username });
+      });
+
+      socket.on("stop-typing", ({ roomId, userId, username }) => {
+        io.emit("user_stop_typing", { roomId, userId, username });
+      });
     });
 
     io.emit("user_connected", {

@@ -17,4 +17,7 @@ export interface IUser extends mongoose.Document {
   contacts: mongoose.Types.ObjectId[];
   lastActive: Date;
   timestamp: Date;
+  role: "user" | "admin";
+  createdAt: Date;
+  isBanned: boolean;
 }

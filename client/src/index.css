@@ -20,18 +20,6 @@ body {
 }
 
 
-#contact-list::-webkit-scrollbar {
-  width: 16px;
-
-}
-
-#contact-list::-webkit-scrollbar-thumb {
-  @apply bg-primary;
-  border: 6px solid transparent;
-  border-radius: 8px;
-  background-clip: padding-box;
-}
-
 ::-webkit-scrollbar {
   width: 10px;
 }

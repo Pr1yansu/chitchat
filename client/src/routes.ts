@@ -1,1 +1,7 @@
-export const includedRoutes = ["/", "/chat", "/settings", "/profile"];
+export const includedRoutes = [
+  "/",
+  "/chat",
+  "/settings",
+  "/profile",
+  "/dashboard",
+];

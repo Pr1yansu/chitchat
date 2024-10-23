@@ -1,8 +1,10 @@
 import express from "express";
 import {
   addUserToRoom,
+  changeAdmin,
   createRoom,
   getChatHistory,
+  getMembersByIDs,
   getRoomById,
   removeUserFromRoom,
   sendMessage,
@@ -31,6 +33,16 @@ router.delete(
   "/room/:roomId/remove/:userId",
   ensureAuthenticated,
   removeUserFromRoom
+);
+
+// @Route GET /members/:members
+router.get("/members/:members", ensureAuthenticated, getMembersByIDs);
+
+// @Route PUT /room/:roomId/change-admin/:otherUserId
+router.put(
+  "/room/:roomId/change-admin/:otherUserId",
+  ensureAuthenticated,
+  changeAdmin
 );
 
 export default router;
