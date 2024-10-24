@@ -5,11 +5,14 @@ import { persistor, store } from "./store/store.ts";
 import { PersistGate } from "redux-persist/integration/react";
 import "./index.css";
 import Loader from "./pages/loader.tsx";
+import { BrowserRouter } from "react-router-dom";
 
 createRoot(document.getElementById("root")!).render(
   <Provider store={store}>
     <PersistGate loading={<Loader />} persistor={persistor}>
-      <App />
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
     </PersistGate>
   </Provider>
 );

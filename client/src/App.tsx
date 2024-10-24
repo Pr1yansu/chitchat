@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import Loader from "@/pages/loader";
 import Layout from "@/components/Layout";
 import { useGetProfileQuery } from "./store/api/users/user";
@@ -15,12 +15,14 @@ const Auth = lazy(() => import("./pages/auth/auth"));
 const PasswordReset = lazy(() => import("./pages/auth/forgot-password"));
 const NotFound = lazy(() => import("./pages/not-found"));
 const Home = lazy(() => import("./pages/home"));
+const Call = lazy(() => import("./pages/call"));
 
 const INACTIVITY_TIMEOUT = 300000;
 
 const App = () => {
   const dispatch = useDispatch();
   const { data, isLoading } = useGetProfileQuery();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!data?.user) {
@@ -92,6 +94,10 @@ const App = () => {
       );
     });
 
+    socket.on("incoming-call", (data) => {
+      navigate(`/call/${data.callerId}?status=incoming`);
+    });
+
     window.addEventListener("mousemove", handleUserActivity);
     window.addEventListener("keypress", handleUserActivity);
     document.addEventListener("visibilitychange", handleVisibilityChange);
@@ -100,12 +106,14 @@ const App = () => {
       socket.disconnect();
       socket.off("user_connected");
       socket.off("user_disconnected");
+      socket.off("user_idle");
+      socket.off("incoming-call");
       window.removeEventListener("mousemove", handleUserActivity);
       window.removeEventListener("keypress", handleUserActivity);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       clearTimeout(idleTimeout);
     };
-  }, [data, dispatch]);
+  }, [data, dispatch, navigate]);
 
   if (isLoading) {
     return <Loader />;
@@ -113,36 +121,31 @@ const App = () => {
 
   const user = data?.user;
 
-  console.log("user", user);
-
   return (
-    <BrowserRouter>
-      <Suspense fallback={<Loader />}>
-        <Layout>
-          <Routes>
-            {user ? (
-              <>
-                <Route path="/auth" element={<Navigate to="/chat" replace />} />
-                <Route path="/" element={<Home />} />
-                {user.role && (
-                  <Route path="/dashboard" element={<Dashboard />} />
-                )}
-                <Route path="/chat" element={<Chat />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/settings" element={<Settings />} />
-                <Route path="*" element={<NotFound />} />
-              </>
-            ) : (
-              <>
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/forgot-password" element={<PasswordReset />} />
-                <Route path="*" element={<Navigate to="/auth" replace />} />
-              </>
-            )}
-          </Routes>
-        </Layout>
-      </Suspense>
-    </BrowserRouter>
+    <Suspense fallback={<Loader />}>
+      <Layout>
+        <Routes>
+          {user ? (
+            <>
+              <Route path="/auth" element={<Navigate to="/chat" replace />} />
+              <Route path="/" element={<Home />} />
+              {user.role && <Route path="/dashboard" element={<Dashboard />} />}
+              <Route path="/chat" element={<Chat />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/call/:userId" element={<Call />} />
+              <Route path="*" element={<NotFound />} />
+            </>
+          ) : (
+            <>
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/forgot-password" element={<PasswordReset />} />
+              <Route path="*" element={<Navigate to="/auth" replace />} />
+            </>
+          )}
+        </Routes>
+      </Layout>
+    </Suspense>
   );
 };
 

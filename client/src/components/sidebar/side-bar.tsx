@@ -58,10 +58,6 @@ const SideBar = () => {
 
   if (isProfileLoading) return null;
 
-  if (data?.user && data?.user?.role !== "admin") {
-    routes.shift();
-  }
-
   if (includedRoutes.includes(pathname))
     return (
       <div className="px-3 py-8 shadow-right-sm flex flex-col relative">
@@ -73,28 +69,33 @@ const SideBar = () => {
           />
         </Link>
         <div className="flex flex-col space-y-8 flex-1 items-center pt-12">
-          {routes.map((route, index) => (
-            <TooltipProvider key={index}>
-              <Tooltip delayDuration={1}>
-                <TooltipTrigger>
-                  <NavLink
-                    to={route.href}
-                    className={cn(
-                      "flex items-center justify-center size-10 rounded-lg focus:outline-none focus:bg-primary focus:text-primary-foreground transition",
-                      pathname === route.href
-                        ? "bg-primary text-primary-foreground"
-                        : "hover:bg-primary/50 hover:text-primary-foreground"
-                    )}
-                  >
-                    {route.icon && <route.icon className="size-5" />}
-                  </NavLink>
-                </TooltipTrigger>
-                <TooltipContent side="right">
-                  <span className="text-xs">{route.label}</span>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          ))}
+          {routes.map((route, index) => {
+            if (data?.user && data?.user?.role !== "admin") {
+              if (route.href === "/dashboard") return null;
+            }
+            return (
+              <TooltipProvider key={index}>
+                <Tooltip delayDuration={1}>
+                  <TooltipTrigger>
+                    <NavLink
+                      to={route.href}
+                      className={cn(
+                        "flex items-center justify-center size-10 rounded-lg focus:outline-none focus:bg-primary focus:text-primary-foreground transition",
+                        pathname === route.href
+                          ? "bg-primary text-primary-foreground"
+                          : "hover:bg-primary/50 hover:text-primary-foreground"
+                      )}
+                    >
+                      {route.icon && <route.icon className="size-5" />}
+                    </NavLink>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <span className="text-xs">{route.label}</span>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            );
+          })}
         </div>
         <div>
           <TooltipProvider>

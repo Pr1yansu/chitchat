@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -47,7 +47,6 @@ export default function FullContactModal({ title, description }: ModalProps) {
     data: contactedUser,
     isLoading: isContactedUserLoading,
     isFetching: isContactedUserFetching,
-    refetch: refetchContactedUser,
   } = useGetUserContactedUserByIdQuery({ userId: chatId }, { skip: !chatId });
 
   const {
@@ -65,22 +64,10 @@ export default function FullContactModal({ title, description }: ModalProps) {
   );
 
   useEffect(() => {
-    if (type === "contact" && chatId && isOpen) {
-      refetchContactedUser();
-    }
     if (type === "group" && groupId && isOpen) {
       refetchGroup();
     }
-  }, [
-    contactedUser,
-    groupData,
-    type,
-    chatId,
-    groupId,
-    refetchContactedUser,
-    refetchGroup,
-    isOpen,
-  ]);
+  }, [groupData, type, groupId, refetchGroup, isOpen]);
 
   const isLoading =
     (type === "contact" &&
@@ -125,6 +112,7 @@ export default function FullContactModal({ title, description }: ModalProps) {
 }
 
 function ContactInfo({ user }: { user: User }) {
+  const dispatch = useDispatch();
   return (
     <div className="space-y-6" key={user.id}>
       <div className="flex flex-col items-center justify-center space-y-4">
@@ -142,16 +130,23 @@ function ContactInfo({ user }: { user: User }) {
       <div className="space-y-2 text-center">
         <p className="text-sm text-muted-foreground">Account created on</p>
         <p className="text-sm font-medium">
-          {new Date(user.timestamp).toLocaleDateString()}
+          {new Date(user.createdAt).toLocaleDateString()}
         </p>
       </div>
       <div className="flex items-center justify-center space-x-4">
         <Button size="icon" variant="outline">
-          <MessageCircle className="h-5 w-5" />
+          <MessageCircle
+            className="h-5 w-5"
+            onClick={() => {
+              dispatch(closeContactModal());
+            }}
+          />
         </Button>
-        <Button size="icon" variant="outline">
-          <PhoneCall className="h-5 w-5" />
-        </Button>
+        <Link to={`/call/${user.id}`}>
+          <Button size="icon" variant="outline">
+            <PhoneCall className="h-5 w-5" />
+          </Button>
+        </Link>
       </div>
     </div>
   );

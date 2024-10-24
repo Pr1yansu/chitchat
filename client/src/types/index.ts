@@ -21,6 +21,7 @@ export interface User {
   lastMessage?: string;
   role?: "user" | "admin";
   isBanned?: boolean;
+  createdAt: Date;
 }
 
 export interface Attachment {
@@ -53,6 +54,7 @@ export interface Room {
     url?: string;
   };
   owner: User;
+  createdAt: Date;
 }
 
 export interface DashboardUsers {
