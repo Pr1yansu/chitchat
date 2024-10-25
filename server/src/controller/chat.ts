@@ -89,7 +89,7 @@ export const getChatHistory = GlobalTryCatch(
       room: roomId,
     })
       .populate("sender")
-      .sort({ timestamp: -1 });
+      .sort({ timestamp: 1 });
 
     return res.status(200).json({
       success: true,
