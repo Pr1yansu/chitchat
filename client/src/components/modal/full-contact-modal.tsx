@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -20,7 +20,7 @@ import {
   useAddMemberMutation,
   useGetRoomByIdQuery,
 } from "@/store/api/chat/chat";
-import { MessageCircle, PhoneCall, UserRoundPlus, X } from "lucide-react";
+import { MessageCircle, UserRoundPlus, X } from "lucide-react";
 import { Room, User } from "@/types";
 import AllMemberData from "@/components/all-member-data";
 import { useEffect, useState, useTransition } from "react";
@@ -142,11 +142,6 @@ function ContactInfo({ user }: { user: User }) {
             }}
           />
         </Button>
-        <Link to={`/call/${user.id}`}>
-          <Button size="icon" variant="outline">
-            <PhoneCall className="h-5 w-5" />
-          </Button>
-        </Link>
       </div>
     </div>
   );

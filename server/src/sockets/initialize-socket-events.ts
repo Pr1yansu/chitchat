@@ -5,7 +5,6 @@ export const initializeSocketEvents = (io: Server) => {
   io.on("connection", (socket: Socket) => {
     const userId = socket.data.userId;
 
-    // Store user socket connections
     if (userId) {
       io.onlineUsers.set(userId, socket.id);
     }
@@ -42,37 +41,22 @@ export const initializeSocketEvents = (io: Server) => {
       socket.on("stop-typing", ({ roomId, userId, username }) => {
         io.emit("user_stop_typing", { roomId, userId, username });
       });
-    });
 
-    // Handle initiating a call and sending WebRTC signaling data
-    socket.on("initiate-call", ({ callerId, calleeId, signal }) => {
-      const calleeSocketId = io.onlineUsers.get(calleeId);
-      if (calleeSocketId) {
-        io.to(calleeSocketId).emit("incoming-call", { callerId, signal });
-      }
-    });
+      socket.on("call-user", ({ signalData, roomId }) => {
+        socket
+          .to(roomId)
+          .emit("receive-call", { signalData, roomId, callerId: userId });
+      });
 
-    // Handle accepting a call and responding with WebRTC signaling data
-    socket.on("accept-call", ({ signal, callerId }) => {
-      const callerSocketId = io.onlineUsers.get(callerId);
-      if (callerSocketId) {
-        io.to(callerSocketId).emit("call-accepted", signal);
-      }
-    });
+      socket.on("accept-call", ({ signalData, roomId }) => {
+        socket
+          .to(roomId)
+          .emit("call-accepted", { signalData, roomId, responderId: userId });
+      });
 
-    // Handle rejecting a call
-    socket.on("reject-call", ({ callerId }) => {
-      const callerSocketId = io.onlineUsers.get(callerId);
-      if (callerSocketId) {
-        io.to(callerSocketId).emit("call-rejected");
-      }
-    });
-
-    socket.on("webrtc-signal", ({ targetId, signal }) => {
-      const targetSocketId = io.onlineUsers.get(targetId);
-      if (targetSocketId) {
-        io.to(targetSocketId).emit("webrtc-signal", { signal });
-      }
+      socket.on("end-call", (roomId) => {
+        socket.to(roomId).emit("call-ended", { roomId });
+      });
     });
 
     io.emit("user_connected", { userId, status: "online" });

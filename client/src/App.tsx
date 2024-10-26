@@ -15,7 +15,6 @@ const Auth = lazy(() => import("./pages/auth/auth"));
 const PasswordReset = lazy(() => import("./pages/auth/forgot-password"));
 const NotFound = lazy(() => import("./pages/not-found"));
 const Home = lazy(() => import("./pages/home"));
-const Call = lazy(() => import("./pages/call"));
 
 const INACTIVITY_TIMEOUT = 300000;
 
@@ -94,8 +93,8 @@ const App = () => {
       );
     });
 
-    socket.on("incoming-call", (data) => {
-      navigate(`/call/${data.callerId}?status=incoming`);
+    socket.on("receive-call", (data) => {
+      navigate(`/chat?chat=${data.callerId}`);
     });
 
     window.addEventListener("mousemove", handleUserActivity);
@@ -107,7 +106,8 @@ const App = () => {
       socket.off("user_connected");
       socket.off("user_disconnected");
       socket.off("user_idle");
-      socket.off("incoming-call");
+      socket.off("online-users");
+      socket.off("receive-call");
       window.removeEventListener("mousemove", handleUserActivity);
       window.removeEventListener("keypress", handleUserActivity);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
@@ -133,7 +133,6 @@ const App = () => {
               <Route path="/chat" element={<Chat />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/settings" element={<Settings />} />
-              <Route path="/call/:userId" element={<Call />} />
               <Route path="*" element={<NotFound />} />
             </>
           ) : (

@@ -9,11 +9,3 @@ export const socket: Socket = io(URL, {
   autoConnect: false,
   withCredentials: true,
 });
-
-socket.on("connect", () => {});
-
-socket.on("disconnect", () => {});
-
-socket.onAny((event, ...args) => {
-  console.log("event:", event, "args:", args);
-});

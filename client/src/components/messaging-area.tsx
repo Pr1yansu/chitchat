@@ -1,5 +1,14 @@
-import { useEffect, useRef, useTransition } from "react";
-import { Loader2, MessageCircle } from "lucide-react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import {
+  Loader2,
+  MessageCircle,
+  Mic,
+  MicOff,
+  Phone,
+  PhoneOff,
+  Video,
+  VideoOff,
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useSearchParams } from "react-router-dom";
 import {
@@ -20,9 +29,22 @@ import { addMessage, clearMessages } from "@/store/slices/chat";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import MessagingHeader from "@/components/messaging-header";
 import { startTyping, stopTyping } from "@/store/slices/typing";
+import SimplePeer from "simple-peer";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 export default function MessagingArea() {
   const [searchParams] = useSearchParams();
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const [startCall, setStartCall] = useState(false);
+  const [receivingCall, setReceivingCall] = useState(false);
+  const [callerSignal, setCallerSignal] = useState("");
+  const [callAccepted, setCallAccepted] = useState(false);
+  const [isVideoEnabled, setIsVideoEnabled] = useState(false);
+  const [isAudioEnabled, setIsAudioEnabled] = useState(true);
+  const myVideo = useRef<HTMLVideoElement | null>(null);
+  const userVideo = useRef<HTMLVideoElement | null>(null);
+  const peerRef = useRef<SimplePeer.Instance>();
   const [pending, startTransition] = useTransition();
   const dispatch = useDispatch();
   const chatId = searchParams.get("chat") || "";
@@ -94,6 +116,11 @@ export default function MessagingArea() {
           username,
         })
       );
+    });
+    socket.on("receive-call", (data) => {
+      setStartCall(true);
+      setReceivingCall(true);
+      setCallerSignal(data.signalData);
     });
 
     return () => {
@@ -178,10 +205,217 @@ export default function MessagingArea() {
     );
   }
 
-  if (chatId)
+  const handleCall = () => {
+    navigator.mediaDevices
+      .getUserMedia({ video: false, audio: true })
+      .then((cStream: MediaStream) => {
+        setStartCall(true);
+        setIsAudioEnabled(true);
+        setStream(cStream);
+
+        if (myVideo.current) {
+          myVideo.current.srcObject = cStream;
+        }
+
+        const peer = new SimplePeer({
+          initiator: true,
+          trickle: false,
+          stream: cStream,
+        });
+
+        peer.on("signal", (d) => {
+          socket.emit("call-user", {
+            signalData: d,
+            roomId: data?.room.id,
+          });
+        });
+
+        peer.on("stream", (s) => {
+          if (userVideo.current) {
+            userVideo.current.srcObject = s;
+          }
+        });
+
+        socket.on("call-accepted", (signal) => {
+          console.log("Signal Data:", signal);
+          setCallAccepted(true);
+          if (peerRef.current) {
+            peerRef.current.signal(signal.signalData);
+          } else {
+            console.error("Peer reference is not initialized.");
+          }
+        });
+
+        peerRef.current = peer;
+      })
+      .catch((err) => {
+        console.log(err);
+        setStartCall(false);
+        toast.error("An error occurred while trying to make a call");
+      });
+  };
+
+  const handleAnswer = () => {
+    setCallAccepted(true);
+
+    navigator.mediaDevices
+      .getUserMedia({ video: false, audio: true })
+      .then((cStream: MediaStream) => {
+        setStream(cStream);
+        const peer = new SimplePeer({
+          initiator: false,
+          trickle: false,
+          stream: cStream,
+        });
+
+        peer.on("signal", (d) => {
+          socket.emit("accept-call", {
+            signalData: d,
+            roomId: data?.room.id,
+          });
+        });
+
+        peer.on("stream", (s) => {
+          if (userVideo.current) {
+            userVideo.current.srcObject = s;
+          }
+        });
+
+        peer.signal(callerSignal);
+        peerRef.current = peer;
+      });
+  };
+
+  const handleReject = () => {
+    setReceivingCall(false);
+    if (peerRef.current) {
+      peerRef.current.destroy();
+    }
+    setStream(null);
+  };
+
+  const handleEndCall = () => {
+    if (peerRef.current) {
+      peerRef.current.destroy();
+    }
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+      setStream(null);
+    }
+    setCallAccepted(false);
+    setStartCall(false);
+  };
+
+  const toggleAudio = () => {
+    if (stream) {
+      const enabled = !isAudioEnabled;
+      stream.getAudioTracks().forEach((track) => {
+        track.enabled = enabled;
+      });
+      setIsAudioEnabled(enabled);
+    }
+  };
+
+  const toggleVideo = () => {
+    if (stream) {
+      if (isVideoEnabled) {
+        stream.getVideoTracks().forEach((track) => track.stop());
+        setIsVideoEnabled(false);
+      } else {
+        navigator.mediaDevices
+          .getUserMedia({ video: true })
+          .then((vStream: MediaStream) => {
+            if (!peerRef.current) return;
+            const videoTrack = vStream.getVideoTracks()[0];
+            stream.addTrack(videoTrack);
+            peerRef.current.replaceTrack(
+              stream.getVideoTracks()[0],
+              videoTrack,
+              stream
+            );
+            setIsVideoEnabled(true);
+            if (myVideo.current) {
+              myVideo.current.srcObject = stream;
+            }
+          })
+          .catch((err) => {
+            toast.error("An error occurred while trying to start video");
+            console.log(err);
+          });
+      }
+    }
+  };
+
+  if (chatId && startCall) {
+    return (
+      <div className="p-5 flex-1 mx-auto">
+        {receivingCall && !callAccepted && (
+          <div className="bg-primary/10 rounded-lg p-6 mb-6 text-center">
+            <h2 className="text-2xl font-semibold mb-4">Incoming Call</h2>
+            <Button
+              onClick={handleAnswer}
+              className="bg-green-500 hover:bg-green-600"
+            >
+              Answer
+            </Button>
+            <Button onClick={handleReject} variant="destructive">
+              Reject
+            </Button>
+          </div>
+        )}
+        {(callAccepted || startCall) && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="relative aspect-video bg-gray-200 rounded-lg overflow-hidden">
+                <video
+                  ref={userVideo}
+                  autoPlay
+                  playsInline
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+                <div className="absolute bottom-2 left-2 bg-black/50 text-white px-2 py-1 rounded text-sm">
+                  Other User
+                </div>
+              </div>
+              <div className="relative aspect-video bg-gray-200 rounded-lg overflow-hidden">
+                <video
+                  ref={myVideo}
+                  autoPlay
+                  playsInline
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+                <div className="absolute bottom-2 left-2 bg-black/50 text-white px-2 py-1 rounded text-sm">
+                  You
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-center space-x-4">
+              <Button onClick={handleEndCall} variant="destructive">
+                End Call
+              </Button>
+              <Button
+                onClick={toggleAudio}
+                variant={isAudioEnabled ? "outline" : "secondary"}
+              >
+                {isAudioEnabled ? "Mute" : "Unmute"}
+              </Button>
+              <Button
+                onClick={toggleVideo}
+                variant={isVideoEnabled ? "outline" : "secondary"}
+              >
+                {isVideoEnabled ? "Stop Video" : "Start Video"}
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (chatId && startCall === false)
     return (
       <div className="h-full flex flex-col flex-1">
-        <MessagingHeader data={data} />
+        <MessagingHeader data={data} onCall={handleCall} />
         <div className="flex-1 overflow-y-auto p-5">
           {messages.map((msg, id) => {
             const isOwnMessage = msg.fromUserId !== data?.receiver?.id;

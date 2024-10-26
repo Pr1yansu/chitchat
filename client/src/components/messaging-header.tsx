@@ -3,7 +3,7 @@ import { UserContactedUserResponse } from "@/store/api/users/user";
 import { Skeleton } from "@/components/ui/skeleton";
 import MainAvatar from "@/components/avatar";
 import { Button } from "./ui/button";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, PhoneCall } from "lucide-react";
 import { useDispatch } from "react-redux";
 import {
   openContactModal,
@@ -13,9 +13,11 @@ import {
 const MessagingHeader = ({
   data,
   groupData,
+  onCall,
 }: {
   data?: UserContactedUserResponse;
   groupData?: SingleGrpResponse;
+  onCall?: () => void;
 }) => {
   const dispatch = useDispatch();
   if (data) {
@@ -49,16 +51,21 @@ const MessagingHeader = ({
             </p>
           </div>
         </div>
-        <Button
-          size={"icon"}
-          variant={"ghost"}
-          onClick={() => {
-            dispatch(setModalType("contact"));
-            dispatch(openContactModal());
-          }}
-        >
-          <MoreHorizontal className="h-5 w-5" />
-        </Button>
+        <div className="space-x-2">
+          <Button size={"icon"} variant={"ghost"} onClick={onCall}>
+            <PhoneCall className="h-5 w-5" />
+          </Button>
+          <Button
+            size={"icon"}
+            variant={"ghost"}
+            onClick={() => {
+              dispatch(setModalType("contact"));
+              dispatch(openContactModal());
+            }}
+          >
+            <MoreHorizontal className="h-5 w-5" />
+          </Button>
+        </div>
       </div>
     );
   }
